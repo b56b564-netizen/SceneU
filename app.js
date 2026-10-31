@@ -342,6 +342,11 @@
   function preload() {
     var list = [C.IMG && C.IMG.lockWallpaper, C.IMG && C.IMG.homeWallpaper, (C.IMG && C.IMG.startBg) || './start-bg.jpg'];
     (C.TWEETS || []).forEach(function (t) { if (t && t.avatar) { list.push(t.avatar); } });
+    (C.NEWS || []).forEach(function (n) { if (n && n.img) { list.push(n.img); } });
+    /* 카톡 프로필 사진, 트위터 본문 사진도 먼저 받아둬요 */
+    ['kk-jeonghwan.jpg', 'kk-yeongjae.jpg', 'kk-gyeongmin.jpg', 'kk-jihun.jpg', 'kk-dohun.jpg', 'kk-hanjin.jpg'].forEach(function (p) { list.push('./' + p); });
+    try { if (C.KAKAO && C.KAKAO.PHOTOS) { Object.keys(C.KAKAO.PHOTOS).forEach(function (k) { if (C.KAKAO.PHOTOS[k]) { list.push(C.KAKAO.PHOTOS[k]); } }); } } catch (e) {}
+    (C.TWEETS || []).forEach(function (t) { (t && t.images || []).forEach(function (p) { if (p) { list.push(p); } }); });
     list.forEach(function (s) { if (s) { resolve(s, function (v) { if (v) { var im = new Image(); im.src = v; if (im.decode) { im.decode().then(function () { DECODED[v] = true; }, function () {}); } } }); } });
     /* 나머지 사진은 화면이 한가할 때 3장씩만 차례로 받아둬요(한꺼번에 받다가 지금 보는 사진이 늦어지지 않게) */
     setTimeout(function () {
@@ -1229,7 +1234,7 @@
     /* 18 */ { auto: '야 정환아 나야 말로 묻자' },
     /* 19 */ { auto: '너 나한테 못 오는 동안 내 생각을 하기는 했어?', reply: ['했잖아 그래서 너 밥 못 챙겨 먹을까 봐 내가 못 가는 게 미안해서 연락했잖아'] },
     /* 20 */ { auto: '어 했지 근데 그거 알아?' },
-    /* 21 */ { auto: '너 그거 니 죄책감 덜려고 그러는 거였어', reply: ['그럼 일 때문인데 다 버리고 가 그럼?', '그럼 니 마음이 편해?'] },
+    /* 21 */ { auto: '너 그거 네 죄책감 덜려고 그러는 거였어', reply: ['그럼 일 때문인데 다 버리고 가 그럼?', '그럼 니 마음이 편해?'] },
     /* 22 */ { auto: '안 편해 나도' },
     /* 23 */ { auto: '너 그때 나 봤다던 날' },
     /* 24 */ { auto: '아 됐어 지금 이런 이야기해서 뭐해', reply: ['뭐', '그날 뭐'] },
@@ -1241,6 +1246,8 @@
     /* 30 */ { auto: '우린 진짜 끝내는 게 맞겠다', reply: ['야', '{FULL}'], next: 31, after: function () { setTimeout(function () { kkEnding('breakup', 4); }, 2400); } },
     /* 31 */ { done: true }
   ];
+  /* 버전 4(12~30번): 신정환 답이 끝나면 키패드가 자동으로 올라와 바로 입력이 시작돼요 */
+  for (var kv = 12; kv <= 30; kv++) { KK_SCRIPT[JH][kv].chain = true; }
   var kkS = {};          /* 방 이름 -> { step, blocked } */
   var kkUI = null;       /* 지금 열려 있는 카카오톡 화면 { layer, name, add(g), refresh(), goRoom(n) } */
   var KK_DATE = '2026-10-24';
@@ -1580,7 +1587,7 @@
         if (!typing && !free) { inp.value = ''; }
         syncSend();
         if (locked && document.activeElement === inp) { inp.blur(); }
-        if (auto && st.want && startAuto) { st.want = false; setTimeout(startAuto, 250); }
+        if (auto && (st.want || stp.chain) && startAuto) { var quick = st.want; st.want = false; setTimeout(startAuto, quick ? 250 : 800); }
       }
       if (st) {
         startAuto = function () {
